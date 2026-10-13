@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aspen KB Case Study</title>
+<meta name="description" content="A private-by-default knowledge base for AI assistants: hybrid retrieval, sensitivity tiers enforced before any cloud model sees text, and evals from day one. A personal project by Dilyn McGuire.">
+<style>
+:root{
+  --bg:#f7f6f2; --surface:#ffffff; --ink:#1d2327; --muted:#5b6670; --line:#e2e0d8;
+  --accent:#0f766e; --accent-soft:#e3f1ef; --warn:#9a3412; --warn-soft:#fbeee6;
+  --bar:#0f766e; --bar-dim:#b9d9d5; --code:#f0eee8;
+  --maxw:760px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121517; --surface:#1a1f22; --ink:#e7eaec; --muted:#9aa5ad; --line:#2b3236;
+    --accent:#4fbfb2; --accent-soft:#16302d; --warn:#f0a070; --warn-soft:#33221a;
+    --bar:#4fbfb2; --bar-dim:#2c4f4b; --code:#222a2e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121517; --surface:#1a1f22; --ink:#e7eaec; --muted:#9aa5ad; --line:#2b3236;
+  --accent:#4fbfb2; --accent-soft:#16302d; --warn:#f0a070; --warn-soft:#33221a;
+  --bar:#4fbfb2; --bar-dim:#2c4f4b; --code:#222a2e;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:17px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+main{max-width:var(--maxw);margin:0 auto;padding:56px 20px 72px}
+a{color:var(--accent)}
+.kicker{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 10px}
+h1{font-size:clamp(30px,5.5vw,42px);line-height:1.15;margin:0 0 14px;letter-spacing:-.01em}
+.lede{font-size:19px;color:var(--muted);margin:0 0 22px}
+.byline{font-size:14px;color:var(--muted);margin:0 0 36px}
+.byline strong{color:var(--ink)}
+h2{font-size:22px;margin:52px 0 12px;letter-spacing:-.005em}
+h3{font-size:17px;margin:26px 0 6px}
+p{margin:0 0 14px}
+ul{margin:0 0 14px;padding-left:22px}
+li{margin:0 0 6px}
+code{font:0.88em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0 0 8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 14px 12px}
+.stat b{display:block;font-size:24px;line-height:1.2;color:var(--accent)}
+.stat span{font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0}
+.note{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:18px 0;font-size:16px}
+.note.warn{background:var(--warn-soft);border-left-color:var(--warn)}
+figure{margin:18px 0}
+figcaption{font-size:14px;color:var(--muted);margin-top:8px}
+svg text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.flow .box{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.flow .box.key{stroke:var(--accent);stroke-width:2}
+.flow .t{fill:var(--ink);font-size:14px;font-weight:600}
+.flow .s{fill:var(--muted);font-size:12px}
+.flow .arrow{stroke:var(--muted);stroke-width:1.5;fill:none}
+.flow .block{stroke:var(--warn);stroke-width:2;fill:none}
+.flow .bt{fill:var(--warn);font-size:12px;font-weight:600}
+.flow .ah{fill:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:10px 0 6px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.best td{font-weight:700}
+.bars{display:grid;gap:10px;margin:14px 0 4px}
+.bar{display:grid;grid-template-columns:170px 1fr 48px;align-items:center;gap:10px;font-size:14px}
+.track{height:14px;background:var(--line);border-radius:7px;overflow:hidden}
+.fill{height:100%;background:var(--bar-dim);border-radius:7px}
+.fill.best{background:var(--bar)}
+.bar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.tiers{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+.tier{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:15px}
+.tier b{display:block;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.tier.private b{color:var(--warn)} .tier.secret b{color:var(--warn)}
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.scroll{overflow-x:auto}
+@media (max-width:640px){
+  body{font-size:16px}
+  main{padding:36px 16px 56px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .tiers{grid-template-columns:1fr}
+  .bar{grid-template-columns:110px 1fr 42px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<main>
+  <p class="kicker">Case study · Personal project</p>
+  <h1>Aspen KB: a knowledge base my AI assistants can search, without seeing what they shouldn't</h1>
+  <p class="lede">I use AI assistants every day and wanted them to know my notes. Some of those notes must never leave my machine. Aspen is how I got both, with the boundary built in from day one and every change measured.</p>
+  <p class="byline"><strong>Dilyn McGuire</strong> · IT Administrator · Built with AI assistance (Claude Code) · Phase 1 completed October 2026 · <a href="https://www.linkedin.com/in/ctrl-alt-dilyn">LinkedIn</a></p>
+
+  <div class="stats" role="list">
+    <div class="stat" role="listitem"><b>328</b><span>notes indexed</span></div>
+    <div class="stat" role="listitem"><b>3,352</b><span>chunks, embedded locally in 31 s</span></div>
+    <div class="stat" role="listitem"><b>83% → 100%</b><span>top-10 retrieval after one change</span></div>
+    <div class="stat" role="listitem"><b>4 tiers</b><span>decide which model may see each row</span></div>
+  </div>
+
+  <h2>The problem</h2>
+  <p>An AI assistant is only as useful as what it can find. My notes cover projects, homelab runbooks, research, and personal admin. I wanted Claude and other assistants to search them through the Model Context Protocol (MCP), the same way they'd use any other tool.</p>
+  <p>The catch is the same one every IT team faces when it connects an AI tool to company data: <strong>what can the tool see, and where does that data go?</strong> A note about my job search or my finances shouldn't be sent to a cloud model just because it matched a search. So the question wasn't "can I build retrieval?" It was "can I build retrieval where the privacy boundary holds, and prove it?"</p>
+
+  <h2>How it works</h2>
+  <p>The design is a personal-scale copy of the enterprise knowledge-base pattern Cerebras published: one table, many sources, hybrid retrieval, and thin MCP tools. I adapted it for a single user and added the parts I cared about most: sensitivity tiers, context headers, and evals.</p>
+
+  <figure class="card scroll" aria-label="Data flow from notes to AI clients">
+    <svg class="flow" viewBox="0 0 700 295" width="100%" role="img" aria-labelledby="flowTitle flowDesc" style="min-width:560px">
+      <title id="flowTitle">Aspen KB data flow</title>
+      <desc id="flowDesc">Notes pass through local tiering rules into a single Postgres table. A local command-line tool can read every tier. The MCP server filters out private rows before results reach cloud AI clients, and secret text is never indexed.</desc>
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+      <rect class="box" x="10" y="110" width="120" height="70" rx="10"/>
+      <text class="t" x="70" y="140" text-anchor="middle">Notes</text>
+      <text class="s" x="70" y="160" text-anchor="middle">vault, by heading</text>
+      <rect class="box key" x="170" y="110" width="140" height="70" rx="10"/>
+      <text class="t" x="240" y="140" text-anchor="middle">Tiering rules</text>
+      <text class="s" x="240" y="160" text-anchor="middle">path · .gitignore · regex</text>
+      <rect class="box" x="350" y="110" width="140" height="70" rx="10"/>
+      <text class="t" x="420" y="140" text-anchor="middle">Postgres</text>
+      <text class="s" x="420" y="160" text-anchor="middle">full-text + pgvector</text>
+      <rect class="box" x="540" y="30" width="150" height="62" rx="10"/>
+      <text class="t" x="615" y="57" text-anchor="middle">Local CLI</text>
+      <text class="s" x="615" y="76" text-anchor="middle">sees every tier</text>
+      <rect class="box key" x="540" y="200" width="150" height="62" rx="10"/>
+      <text class="t" x="615" y="227" text-anchor="middle">MCP server</text>
+      <text class="bt" x="615" y="246" text-anchor="middle">drops private rows</text>
+      <text class="s" x="615" y="284" text-anchor="middle">→ cloud AI clients</text>
+      <path class="arrow" d="M130,145 L166,145" marker-end="url(#ah)"/>
+      <path class="arrow" d="M310,145 L346,145" marker-end="url(#ah)"/>
+      <path class="arrow" d="M490,135 C515,120 515,70 536,64" marker-end="url(#ah)"/>
+      <path class="arrow" d="M490,158 C515,175 515,225 536,230" marker-end="url(#ah)"/>
+      <path class="block" d="M240,180 L240,240"/>
+      <path class="block" d="M228,240 L252,240"/>
+      <text class="bt" x="240" y="262" text-anchor="middle">secret: never indexed</text>
+    </svg>
+    <figcaption>Tiering runs locally before anything is indexed. The MCP path to cloud AI clients drops <code>private</code> rows; only the local CLI can return them.</figcaption>
+  </figure>
+
+  <h3>Retrieval</h3>
+  <ul>
+    <li><strong>Hybrid search.</strong> Full-text search (weighted by how rare each term is), vector search, and exact matching on identifiers, fused with reciprocal rank fusion.</li>
+    <li><strong>Context headers.</strong> Each chunk is embedded with its note title, folder, heading path, and tags, so a short paragraph still carries where it came from.</li>
+    <li><strong>Incremental sync.</strong> Notes are hashed; only changed content is re-embedded. A re-sync with no changes takes 0.3 seconds.</li>
+    <li><strong>Thin MCP tools.</strong> <code>search</code>, <code>get_document</code>, <code>list_projects</code>, and <code>kb_stats</code>. The assistant gets small, predictable tools, not raw database access.</li>
+  </ul>
+
+  <h2>The privacy boundary</h2>
+  <p>Sensitivity is a column on every row, not a gate bolted on afterwards. The tier decides which model is allowed to see the text.</p>
+  <div class="tiers">
+    <div class="tier"><b>public</b>Fine for any model.</div>
+    <div class="tier"><b>personal</b>Mine, but not sensitive.</div>
+    <div class="tier private"><b>private</b>Stays local. Filtered out of everything the MCP server returns to cloud AI clients.</div>
+    <div class="tier secret"><b>secret</b>Text that matches credential patterns. Never indexed at all.</div>
+  </div>
+  <p>Deterministic rules set the tier: where the note lives, whether the vault's <code>.gitignore</code> excludes it, and pattern matching for credential-like text. In phase 1, <strong>93 notes were tiered private automatically</strong> and <strong>one chunk was dropped as secret</strong>.</p>
+  <div class="note">I verified the gate with a question whose answer lives only in a private note. Over MCP it returns no private rows; from the local CLI, the same question finds them. That check is one question today, not a full test suite, and a broader set is on the roadmap.</div>
+
+  <h2>Measured, not guessed</h2>
+  <p>Before tuning anything, I wrote an eval set of 23 questions, paraphrased from things I actually ask, plus lookups by exact identifier. Every configuration is scored on the same set.</p>
+  <div class="card">
+    <div class="bars" aria-label="Top-10 retrieval by configuration">
+      <div class="bar"><span>Hybrid v0.1</span><div class="track"><div class="fill" style="width:83%"></div></div><span class="v">83%</span></div>
+      <div class="bar"><span>Vector only</span><div class="track"><div class="fill" style="width:87%"></div></div><span class="v">87%</span></div>
+      <div class="bar"><span>Full-text + rarity</span><div class="track"><div class="fill" style="width:87%"></div></div><span class="v">87%</span></div>
+      <div class="bar"><span><strong>Hybrid v0.2</strong></span><div class="track"><div class="fill best" style="width:100%"></div></div><span class="v"><strong>100%</strong></span></div>
+    </div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Configuration</th><th class="n">Top-1</th><th class="n">Top-3</th><th class="n">Top-10</th><th class="n">MRR</th></tr></thead>
+      <tbody>
+        <tr><td>Hybrid v0.1 (plain full-text)</td><td class="n">65%</td><td class="n">74%</td><td class="n">83%</td><td class="n">0.70</td></tr>
+        <tr><td>Vector only</td><td class="n">70%</td><td class="n">83%</td><td class="n">87%</td><td class="n">0.75</td></tr>
+        <tr><td>Full-text, rarity-weighted</td><td class="n">43%</td><td class="n">70%</td><td class="n">87%</td><td class="n">0.59</td></tr>
+        <tr class="best"><td>Hybrid v0.2 (rarity-weighted)</td><td class="n">65%</td><td class="n">78%</td><td class="n">100%</td><td class="n">0.75</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+  <p><strong>What I learned:</strong> plain full-text search was <em>hurting</em> the hybrid results. Common words were dragging in the wrong notes. Once terms were weighted by rarity, hybrid search found the right note in the top ten every time. Top-1 still trails vector-only search, which is what a reranker in a later phase is for.</p>
+
+  <h2>A design question I haven't closed</h2>
+  <p>The next phase adds messages and AI session transcripts, and some of that is private. The obvious move is to ask a cloud model whether each item is private. But that sends the item to the cloud first, which leaks exactly what the classifier is meant to protect.</p>
+  <div class="note warn">The plan I'm settling on: <strong>deterministic local rules decide first</strong> (source, path, allowlists, credential patterns); <strong>a local model classifies</strong> what the rules can't settle; <strong>a cloud model only ever sees items already cleared as non-private.</strong></div>
+
+  <h2>Why this matters for IT work</h2>
+  <p>The same three questions apply to any AI productivity tool or MCP integration a company rolls out:</p>
+  <ul>
+    <li><strong>What can it see?</strong> Decide sensitivity before data is indexed or shared, not after something leaks.</li>
+    <li><strong>Where does the data go?</strong> Know which paths reach a cloud model and filter there.</li>
+    <li><strong>Is it actually working?</strong> Measure with a fixed eval set, so "it feels better" becomes a number.</li>
+  </ul>
+  <p>That's how I'd approach evaluating and supporting AI tools for a team: guardrails first, then usefulness, then proof.</p>
+
+  <h2>Honest notes</h2>
+  <ul>
+    <li>Built with AI assistance (Claude Code). I designed it, directed the build, and verified the results; I'm not claiming hand-written proficiency in every line.</li>
+    <li>The architecture follows Cerebras's published enterprise knowledge-base pattern. The sensitivity tiers, context headers, and eval-first approach are my additions for single-user, privacy-first use.</li>
+    <li>It's a single-user personal project, in daily use. Phase 1 (notes) is done; AI sessions, code, and messages are next.</li>
+  </ul>
+
+  <footer>
+    Dilyn McGuire · <a href="https://www.linkedin.com/in/ctrl-alt-dilyn">linkedin.com/in/ctrl-alt-dilyn</a> · Phase 1 measurements from October 6, 2026.
+  </footer>
+</main>
+</body>
+</html>
